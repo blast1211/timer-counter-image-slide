@@ -1,0 +1,38 @@
+{
+  "image_folder": "C:\\Chansol\\Coding\\video_making\\src\\slides",
+  "display_index": 0,
+  "display_indices": [
+    0
+  ],
+  "transition_type": "Fade (Opacity)",
+  "transition_ms": 1500,
+  "hold_ms": 5000,
+  "kenburns": "Alternate (In/Out)",
+  "kenburns_strength_percent": 10,
+  "order": "Random",
+  "stay_on_top": true,
+  "hide_cursor": true,
+  "timer_start_seconds": 30,
+  "timer_font_family": "Arial",
+  "timer_font_size": 70,
+  "timer_fadeout_trigger_seconds": 3,
+  "music_files": [
+    "C:/Chansol/Coding/video_making/src/audio/주님의 강가로 ㅣ To Your Riverㅣ티알워십(TR Worship)ㅣVol.2 Life_Strength_Hope.mp3"
+  ],
+  "music_volume": 80,
+  "subtitle_file": "C:/Chansol/Coding/video_making/src/subtitles/주님의강가로.srt",
+  "subtitle_font_family": "Noto Sans",
+  "subtitle_font_size": 15,
+  "subtitle_kr_font_family": "한컴산뜻돋움",
+  "subtitle_kr_font_size": 25,
+  "subtitle_kr_bold": true,
+  "subtitle_en_font_family": "Noto Sans",
+  "subtitle_en_font_size": 18,
+  "subtitle_en_bold": false,
+  "subtitle_fade_in_ms": 1300,
+  "subtitle_fade_out_ms": 1300,
+  "subtitle_bg_color": "#000000",
+  "subtitle_bg_opacity_percent": 30,
+  "subtitle_bg_pad_top": 50,
+  "subtitle_bg_pad_bottom": 50
+}
