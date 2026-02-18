@@ -1,15 +1,33 @@
-import json
+﻿import json
+import os
+import sys
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any, Dict, Type, TypeVar
 
 T = TypeVar("T")
+APP_DIR_NAME = "video-making"
+
+
+def _config_root() -> Path:
+    if sys.platform == "win32":
+        appdata = os.environ.get("APPDATA")
+        if appdata:
+            return Path(appdata)
+        return Path.home() / "AppData" / "Roaming"
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support"
+
+    xdg = os.environ.get("XDG_CONFIG_HOME")
+    if xdg:
+        return Path(xdg)
+    return Path.home() / ".config"
 
 
 def _settings_path() -> Path:
-    # core/settings_store.py -> 부모(1단계) = 프로젝트 루트(app.py 있는 곳)
-    root = Path(__file__).resolve().parents[1]
-    return root / "settings.json"
+    settings_dir = _config_root() / APP_DIR_NAME
+    settings_dir.mkdir(parents=True, exist_ok=True)
+    return settings_dir / "settings.json"
 
 
 def save_settings(obj: Any) -> None:
