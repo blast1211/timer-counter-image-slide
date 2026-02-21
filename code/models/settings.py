@@ -28,6 +28,7 @@ class AppSettings:
     kenburns_strength_percent: int = 10
 
     order: str = OrderType.RANDOM
+    shuffle_seed: int = 0
 
     stay_on_top: bool = True
     hide_cursor: bool = True

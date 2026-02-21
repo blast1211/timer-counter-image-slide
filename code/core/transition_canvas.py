@@ -3,7 +3,7 @@ from typing import Optional
 
 from PySide6.QtCore import Qt, QRect
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QGraphicsDropShadowEffect, QLabel, QWidget
+from PySide6.QtWidgets import QWidget
 
 from models.settings import KenBurnsType, TransitionType
 
@@ -39,6 +39,8 @@ class TransitionCanvas(QWidget):
         self.timer_end_ts = 0.0
         self.timer_font_family = "Arial"
         self.timer_font_size = 140
+        self._timer_cache_text = ""
+        self._timer_cache_pix: Optional[QPixmap] = None
 
         self.subtitle_cues = []
         self.subtitle_time_ms = 0
@@ -59,18 +61,6 @@ class TransitionCanvas(QWidget):
         self.subtitle_alpha_mul = 1.0
 
         self.black_alpha = 0.0
-
-        self.timer_label = QLabel(self)
-        self.timer_label.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        self.timer_label.setAlignment(Qt.AlignCenter)
-        self.timer_label.hide()
-
-        shadow = QGraphicsDropShadowEffect(self.timer_label)
-        shadow.setBlurRadius(30)
-        shadow.setOffset(0, 0)
-        shadow.setColor(QColor(0, 0, 0, 220))
-        self.timer_label.setGraphicsEffect(shadow)
-        self.timer_label.setStyleSheet("color: white; background: transparent;")
 
     def set_subtitles(
         self,
@@ -228,25 +218,28 @@ class TransitionCanvas(QWidget):
     def set_timer_style(self, family: str, size: int):
         self.timer_font_family = family or "Arial"
         self.timer_font_size = max(10, int(size))
-        font = QFont(self.timer_font_family, self.timer_font_size)
-        font.setBold(True)
-        self.timer_label.setFont(font)
+        self._timer_cache_text = ""
+        self._timer_cache_pix = None
         self.update()
 
     def start_timer(self, total_seconds: int):
         total_seconds = max(0, int(total_seconds))
         if total_seconds <= 0:
             self.timer_active = False
+            self._timer_cache_text = ""
+            self._timer_cache_pix = None
             self.update()
             return
         self.timer_active = True
         self.timer_end_ts = time.monotonic() + float(total_seconds)
-        self.timer_label.show()
+        self._timer_cache_text = ""
+        self._timer_cache_pix = None
         self.update()
 
     def stop_timer(self):
         self.timer_active = False
-        self.timer_label.hide()
+        self._timer_cache_text = ""
+        self._timer_cache_pix = None
         self.update()
 
     def timer_remaining_seconds(self) -> int:
@@ -254,7 +247,6 @@ class TransitionCanvas(QWidget):
             return 0
         rem = int(round(self.timer_end_ts - time.monotonic()))
         rem = max(0, rem)
-        self.timer_label.setText(self._format_mmss(rem))
         return rem
 
     def clear(self):
@@ -368,25 +360,33 @@ class TransitionCanvas(QWidget):
         rem = self.timer_remaining_seconds()
         text = self._format_mmss(rem)
         w, h = self.width(), self.height()
-        font = QFont(self.timer_font_family, self.timer_font_size)
-        font.setBold(True)
-        painter.save()
-        painter.setFont(font)
-        rect = QRect(0, 0, w, h)
-        for dx, dy, alpha in [
-            (0, 0, 0.20),
-            (2, 0, 0.14), (-2, 0, 0.14), (0, 2, 0.14), (0, -2, 0.14),
-            (3, 1, 0.10), (-3, 1, 0.10), (3, -1, 0.10), (-3, -1, 0.10),
-        ]:
-            painter.setOpacity(alpha)
-            painter.setPen(QPen(Qt.black, 10))
-            painter.drawText(rect.translated(dx, dy), Qt.AlignCenter, text)
-        painter.setOpacity(1.0)
-        painter.setPen(QPen(Qt.black, 10))
-        painter.drawText(rect, Qt.AlignCenter, text)
-        painter.setPen(QPen(Qt.white, 1))
-        painter.drawText(rect, Qt.AlignCenter, text)
-        painter.restore()
+        if w <= 0 or h <= 0:
+            return
+
+        if (
+            self._timer_cache_pix is None
+            or self._timer_cache_pix.size() != self.size()
+            or self._timer_cache_text != text
+        ):
+            pm = QPixmap(self.size())
+            pm.fill(Qt.transparent)
+            pp = QPainter(pm)
+            font = QFont(self.timer_font_family, self.timer_font_size)
+            font.setBold(True)
+            pp.setFont(font)
+            rect = QRect(0, 0, w, h)
+            pp.setOpacity(0.6)
+            pp.setPen(QPen(Qt.black, 8))
+            pp.drawText(rect.translated(3, 3), Qt.AlignCenter, text)
+            pp.setOpacity(1.0)
+            pp.setPen(QPen(Qt.white, 1))
+            pp.drawText(rect, Qt.AlignCenter, text)
+            pp.end()
+
+            self._timer_cache_text = text
+            self._timer_cache_pix = pm
+
+        painter.drawPixmap(0, 0, self._timer_cache_pix)
 
     def paintEvent(self, e):
         painter = QPainter(self)
@@ -446,5 +446,6 @@ class TransitionCanvas(QWidget):
 
     def resizeEvent(self, e):
         self._refresh_cache()
-        self.timer_label.setGeometry(self.rect())
+        self._timer_cache_text = ""
+        self._timer_cache_pix = None
         super().resizeEvent(e)

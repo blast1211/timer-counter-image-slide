@@ -167,7 +167,12 @@ class SlideShowWindow(QWidget):
     def _rebuild_deck(self):
         self._deck = self._all_files[:]
         if self.settings.order == OrderType.RANDOM:
-            random.shuffle(self._deck)
+            seed = int(getattr(self.settings, "shuffle_seed", 0))
+            if seed > 0:
+                rng = random.Random(seed)
+                rng.shuffle(self._deck)
+            else:
+                random.shuffle(self._deck)
 
     def start(self):
         if self._running:

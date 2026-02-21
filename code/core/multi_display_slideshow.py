@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import random
 from typing import Dict, List
 
 from PySide6.QtGui import QGuiApplication
@@ -14,6 +15,7 @@ class MultiDisplaySlideShow:
         self.settings = settings
         self._windows: Dict[int, SlideShowWindow] = {}
         self._primary_index = 0
+        self._session_shuffle_seed = random.randint(1, 2_147_483_647)
         self.apply_settings(settings)
 
     def _normalized_indices(self) -> List[int]:
@@ -41,6 +43,7 @@ class MultiDisplaySlideShow:
         else:
             s.music_files = list(getattr(self.settings, "music_files", []))
         s.display_indices = list(self._normalized_indices())
+        s.shuffle_seed = int(getattr(self.settings, "shuffle_seed", 0) or self._session_shuffle_seed)
         return s
 
     def _rebuild_windows(self):
@@ -87,9 +90,13 @@ class MultiDisplaySlideShow:
 
     def apply_settings(self, s: AppSettings):
         self.settings = s
+        if int(getattr(self.settings, "shuffle_seed", 0)) <= 0:
+            self.settings.shuffle_seed = self._session_shuffle_seed
         self._rebuild_windows()
 
     def start(self):
+        self._session_shuffle_seed = random.randint(1, 2_147_483_647)
+        self.settings.shuffle_seed = self._session_shuffle_seed
         self._rebuild_windows()
         for idx in self._normalized_indices():
             self._windows[idx].start()
